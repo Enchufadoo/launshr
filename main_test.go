@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -32,6 +33,12 @@ func TestOpenConfig(t *testing.T) {
 
 	t.Run("Opening a file that doesn't exist", func(t *testing.T) {
 		_, err := openConfig(FakeFileReader{exists: false})
+		assert.NotNil(t, err)
+	})
+
+	t.Run("Not passing a config file as argument throw an error", func(t *testing.T) {
+		os.Args = []string{"", ""}
+		_, err := openConfig(FakeFileReader{exists: true})
 		assert.NotNil(t, err)
 	})
 
