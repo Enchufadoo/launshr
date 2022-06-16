@@ -1,8 +1,7 @@
-<div id="top"></div>
-
 ### About The Project
 
-Meant to be an easy way to launch programs or run commands by saving them in a config file.
+Meant to be an easy way to launch programs or run commands 
+by saving them in a configuration file.
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
