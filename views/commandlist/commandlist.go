@@ -15,7 +15,7 @@ var (
 	selectedItemStyle = lipgloss.NewStyle()
 	style             = lipgloss.NewStyle().
 				BorderStyle(lipgloss.NormalBorder()).
-				BorderTop(true).Width(40)
+				BorderTop(true).Width(30)
 )
 
 type Model struct {
@@ -98,7 +98,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "left":
-			if m.currentNode.Parent != nil {
+			if m.currentNode.IsParent() {
 				return m.GenerateNodeModel(m.currentNode.Parent), cmd
 			}
 
@@ -107,13 +107,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "backspace":
-			if m.textFilterEmpty && m.currentNode.Parent != nil {
+			if m.textFilterEmpty && m.currentNode.IsParent() {
 				return m.GenerateNodeModel(m.currentNode.Parent), cmd
 			}
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
 			selectedNode := m.filteredChildren[m.cursor]
-			if selectedNode.Parent != nil {
+			if selectedNode.IsParent() {
 				m.textInput.SetValue("")
 				return m.GenerateNodeModel(&selectedNode), cmd
 			}
@@ -151,6 +151,12 @@ func (m Model) View() string {
 		return ""
 	}
 
+	columnWidth := 32
+
+	columnsStyle := lipgloss.NewStyle().
+		Margin(1, 3, 0, 0).
+		Width(columnWidth)
+
 	s := selectedItemStyle.Render("Command Menu")
 
 	s += "\n"
@@ -174,7 +180,11 @@ func (m Model) View() string {
 		choicesString = "No results found"
 	}
 
-	s += choicesString
+	s += lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		columnsStyle.Copy().Render(choicesString),
+		columnsStyle.Copy().Render(RenderDescription(m.filteredChildren[m.cursor])),
+	)
 
 	return s
 }

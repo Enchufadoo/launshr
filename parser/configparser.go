@@ -12,6 +12,10 @@ type CommandNode struct {
 	WorkingDirectory string
 }
 
+func (node *CommandNode) IsParent() bool {
+	return node.Parent != nil
+}
+
 func parseJSONStructure(elementValue []byte, elementType jsonparser.ValueType, node *CommandNode) error {
 	switch elementType {
 	case jsonparser.Object:
