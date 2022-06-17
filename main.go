@@ -27,6 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	parser := parser.JsonParser{}
 	nodes, err := parser.ParseConfigFile(configFileContent)
 
 	if err != nil {
