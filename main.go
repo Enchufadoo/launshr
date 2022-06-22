@@ -24,11 +24,12 @@ func main() {
 	configFileContent, err := openConfig(FileReader{})
 
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	parser := parser.JsonParser{}
-	nodes, err := parser.ParseConfigFile(configFileContent)
+	jsonParser := parser.JsonParser{}
+	nodes, err := jsonParser.ParseConfigFile(configFileContent)
 
 	if err != nil {
 		fmt.Println("Could not parse JSON file")
