@@ -32,9 +32,20 @@ type programFinishedMsg struct{ err error }
 
 // GenerateNodeModel Used as a convenience method to update the model data
 func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
+	return Model{
+		textInput:        m.textInput,
+		filteredChildren: m.filterNodes(m.textInput.Value(), node),
+		selected:         make(map[int]struct{}),
+		currentNode:      node,
+		cursor:           0,
+		textFilterEmpty:  m.textInput.Value() == "",
+	}
+}
+
+func (m Model) filterNodes(textToFilter string, node *parser.CommandNode) []parser.CommandNode {
 	var filteredChildren []parser.CommandNode
 
-	textFilter := strings.Trim(strings.ToLower(m.textInput.Value()), " ")
+	textFilter := strings.Trim(strings.ToLower(textToFilter), " ")
 	textFilterEmpty := textFilter == ""
 
 	for _, v := range node.Nodes {
@@ -47,14 +58,7 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 		filteredChildren = append(filteredChildren, v)
 	}
 
-	return Model{
-		textInput:        m.textInput,
-		filteredChildren: filteredChildren,
-		selected:         make(map[int]struct{}),
-		currentNode:      node,
-		cursor:           0,
-		textFilterEmpty:  textFilterEmpty,
-	}
+	return filteredChildren
 }
 
 func generateTextInput() textinput.Model {
@@ -165,7 +169,9 @@ func (m Model) View() string {
 	s += m.textInput.View()
 	s += "\n\n"
 
-	choicesString := ""
+	choicesString := "No results found"
+	description := ""
+	listItems := ""
 
 	for i, choice := range m.filteredChildren {
 		cursor := " "
@@ -173,17 +179,18 @@ func (m Model) View() string {
 			cursor = ">"
 		}
 
-		choicesString += fmt.Sprintf("%s %s\n", cursor, choice.Name)
+		listItems += fmt.Sprintf("%s %s\n", cursor, choice.Name)
 	}
 
-	if choicesString == "" {
-		choicesString = "No results found"
+	if len(m.filteredChildren) > 0 {
+		choicesString = listItems
+		description = RenderDescription(m.filteredChildren[m.cursor])
 	}
 
 	s += lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		columnsStyle.Copy().Render(choicesString),
-		columnsStyle.Copy().Render(RenderDescription(m.filteredChildren[m.cursor])),
+		columnsStyle.Copy().Render(description),
 	)
 
 	return s
