@@ -15,7 +15,7 @@ func TestRenderDescription(t *testing.T) {
 		{
 			"Getting a description with full node data",
 			parser.CommandNode{Name: "Hola", Command: "cd hola", WorkingDirectory: "/"},
-			"Hola\ncd hola\nWorking Directory: /",
+			"cd hola\n\nWorking Directory: /",
 		},
 		{
 			"Parent node gets an empty description",
@@ -25,7 +25,7 @@ func TestRenderDescription(t *testing.T) {
 		{
 			"No name and working directory just shows the command",
 			parser.CommandNode{Command: "cd hi"},
-			"cd hi\n",
+			"cd hi\n\n",
 		},
 	}
 
