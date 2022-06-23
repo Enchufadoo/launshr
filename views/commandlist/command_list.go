@@ -155,12 +155,6 @@ func (m Model) View() string {
 		return ""
 	}
 
-	columnWidth := 32
-
-	columnsStyle := lipgloss.NewStyle().
-		Margin(1, 3, 0, 0).
-		Width(columnWidth)
-
 	s := selectedItemStyle.Render("Command Menu")
 
 	s += "\n"
@@ -187,11 +181,25 @@ func (m Model) View() string {
 		description = RenderDescription(m.filteredChildren[m.cursor])
 	}
 
-	s += lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		columnsStyle.Copy().Render(choicesString),
-		columnsStyle.Copy().Render(description),
-	)
+	s += m.renderColumns(choicesString, description)
 
 	return s
+}
+
+func (m Model) renderColumns(itemList string, description string) string {
+	nameColumnWidth := 30
+	nameColumnStyle := lipgloss.NewStyle().
+		Margin(1, 3, 0, 0).
+		Width(nameColumnWidth)
+
+	descriptionColumnWidth := 50
+	descriptionColumnStyle := lipgloss.NewStyle().
+		Margin(1, 3, 0, 0).
+		Width(descriptionColumnWidth)
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		nameColumnStyle.Copy().Render(itemList),
+		descriptionColumnStyle.Copy().Render(description),
+	)
 }

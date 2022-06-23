@@ -25,7 +25,7 @@ func TestRenderDescription(t *testing.T) {
 		{
 			"No name and working directory just shows the command",
 			parser.CommandNode{Command: "cd hi"},
-			"cd hi\n",
+			"cd hi\n\n",
 		},
 	}
 
