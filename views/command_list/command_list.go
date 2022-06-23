@@ -1,4 +1,4 @@
-package commandlist
+package command_list
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ var (
 				BorderTop(true).Width(30)
 )
 
-type Model struct {
+type ListModel struct {
 	currentNode      *parser.CommandNode
 	filteredChildren []parser.CommandNode
 	cursor           int
@@ -31,8 +31,8 @@ type Model struct {
 type programFinishedMsg struct{ err error }
 
 // GenerateNodeModel Used as a convenience method to update the model data
-func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
-	return Model{
+func (m ListModel) GenerateNodeModel(node *parser.CommandNode) ListModel {
+	return ListModel{
 		textInput:        m.textInput,
 		filteredChildren: m.filterNodes(m.textInput.Value(), node),
 		selected:         make(map[int]struct{}),
@@ -42,7 +42,7 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 	}
 }
 
-func (m Model) filterNodes(textToFilter string, node *parser.CommandNode) []parser.CommandNode {
+func (m ListModel) filterNodes(textToFilter string, node *parser.CommandNode) []parser.CommandNode {
 	var filteredChildren []parser.CommandNode
 
 	textFilter := strings.Trim(strings.ToLower(textToFilter), " ")
@@ -73,19 +73,19 @@ func generateTextInput() textinput.Model {
 	return ti
 }
 
-func InitialModel(node *parser.CommandNode) Model {
-	newModel := Model{}
+func InitialModel(node *parser.CommandNode) ListModel {
+	newModel := ListModel{}
 
 	filledModel := newModel.GenerateNodeModel(node)
 	filledModel.textInput = generateTextInput()
 	return filledModel
 }
 
-func (m Model) Init() tea.Cmd {
+func (m ListModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
 	switch msg := msg.(type) {
@@ -121,7 +121,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput.SetValue("")
 				return m.GenerateNodeModel(&selectedNode), cmd
 			}
-			return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
+			return ListModel{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 		default:
 			return m.GenerateNodeModel(m.currentNode), cmd
 		}
@@ -150,7 +150,8 @@ func runCommand(command string, workingDirectory string) tea.Cmd {
 }
 
 // View Main view, represents the list of items to run
-func (m Model) View() string {
+func (m ListModel) View() string {
+
 	if m.runningCommand {
 		return ""
 	}
@@ -186,7 +187,7 @@ func (m Model) View() string {
 	return s
 }
 
-func (m Model) renderColumns(itemList string, description string) string {
+func (m ListModel) renderColumns(itemList string, description string) string {
 	nameColumnWidth := 30
 	nameColumnStyle := lipgloss.NewStyle().
 		Margin(1, 3, 0, 0).

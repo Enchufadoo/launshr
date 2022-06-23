@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"io/ioutil"
 	"launshr/parser"
-	"launshr/views/commandlist"
+	"launshr/views/main_view"
 	"os"
 )
 
@@ -37,7 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	p := tea.NewProgram(commandlist.InitialModel(&nodes))
+	p := tea.NewProgram(main_view.InitialModel(&nodes))
 
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)

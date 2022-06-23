@@ -1,4 +1,4 @@
-package commandlist
+package command_list
 
 import (
 	"github.com/stretchr/testify/assert"
