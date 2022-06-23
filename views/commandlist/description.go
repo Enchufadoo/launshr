@@ -12,11 +12,7 @@ func RenderDescription(node parser.CommandNode) string {
 		return resultString
 	}
 
-	if node.Name != "" {
-		resultString += fmt.Sprintf("%s\n", node.Name)
-	}
-
-	resultString += fmt.Sprintf("%s\n", node.Command)
+	resultString += fmt.Sprintf("%s\n\n", node.Command)
 
 	if node.WorkingDirectory != "" {
 		resultString += fmt.Sprintf("Working Directory: %s", node.WorkingDirectory)
