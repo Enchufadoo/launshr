@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"launshr/navigation"
 	"launshr/parser"
 	"os"
 	"os/exec"
@@ -18,47 +19,48 @@ var (
 				BorderTop(true).Width(30)
 )
 
-type ListModel struct {
-	currentNode      *parser.CommandNode
-	filteredChildren []parser.CommandNode
-	cursor           int
-	selected         map[int]struct{}
-	textInput        textinput.Model
-	textFilterEmpty  bool
-	runningCommand   bool
+type Model struct {
+	currentNode     *parser.CommandNode
+	cursor          int
+	selected        map[int]struct{}
+	textInput       textinput.Model
+	textFilterEmpty bool
+	runningCommand  bool
+	children        *[]*parser.CommandNode
 }
 
 type programFinishedMsg struct{ err error }
 
 // GenerateNodeModel Used as a convenience method to update the model data
-func (m ListModel) GenerateNodeModel(node *parser.CommandNode) ListModel {
-	return ListModel{
-		textInput:        m.textInput,
-		filteredChildren: m.filterNodes(m.textInput.Value(), node),
-		selected:         make(map[int]struct{}),
-		currentNode:      node,
-		cursor:           0,
-		textFilterEmpty:  m.textInput.Value() == "",
+func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
+	return Model{
+		textInput:       m.textInput,
+		selected:        make(map[int]struct{}),
+		currentNode:     node,
+		cursor:          0,
+		textFilterEmpty: m.textInput.Value() == "",
+		children:        m.filterNodes(m.textInput.Value(), node),
 	}
 }
 
-func (m ListModel) filterNodes(textToFilter string, node *parser.CommandNode) []parser.CommandNode {
-	var filteredChildren []parser.CommandNode
+func (m Model) filterNodes(textToFilter string, node *parser.CommandNode) *[]*parser.CommandNode {
+	var filteredChildren []*parser.CommandNode
 
 	textFilter := strings.Trim(strings.ToLower(textToFilter), " ")
 	textFilterEmpty := textFilter == ""
 
-	for _, v := range node.Nodes {
+	for key, v := range node.Nodes {
+
 		if !textFilterEmpty {
 			if !strings.Contains(strings.ToLower(v.Name), textFilter) {
 				continue
 			}
 		}
 
-		filteredChildren = append(filteredChildren, v)
+		filteredChildren = append(filteredChildren, &node.Nodes[key])
 	}
 
-	return filteredChildren
+	return &filteredChildren
 }
 
 func generateTextInput() textinput.Model {
@@ -73,21 +75,22 @@ func generateTextInput() textinput.Model {
 	return ti
 }
 
-func InitialModel(node *parser.CommandNode) ListModel {
-	newModel := ListModel{}
+func InitialModel(node *parser.CommandNode) Model {
+	newModel := Model{}
 
 	filledModel := newModel.GenerateNodeModel(node)
 	filledModel.textInput = generateTextInput()
 	return filledModel
 }
 
-func (m ListModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
+
 	switch msg := msg.(type) {
 	case programFinishedMsg:
 		os.Exit(0)
@@ -96,7 +99,6 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-
 		case "up":
 			if m.cursor > 0 {
 				m.cursor--
@@ -107,21 +109,20 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 			}
 
 		case "down":
-			if m.cursor < len(m.filteredChildren)-1 {
+			if m.cursor < len(*m.children)-1 {
 				m.cursor++
 			}
+		case "ctrl+h":
+			return m, navigation.EventNavigateEditNode((*m.children)[m.cursor])
 		case "backspace":
-			if m.textFilterEmpty && m.currentNode.IsParent() {
-				return m.GenerateNodeModel(m.currentNode.Parent), cmd
-			}
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
-			selectedNode := m.filteredChildren[m.cursor]
+			selectedNode := (*m.children)[m.cursor]
 			if selectedNode.IsParent() {
 				m.textInput.SetValue("")
-				return m.GenerateNodeModel(&selectedNode), cmd
+				return m.GenerateNodeModel(selectedNode), cmd
 			}
-			return ListModel{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
+			return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 		default:
 			return m.GenerateNodeModel(m.currentNode), cmd
 		}
@@ -141,16 +142,14 @@ func runCommand(command string, workingDirectory string) tea.Cmd {
 
 	c := exec.Command("bash", "-c", command)
 
-	wrapperCommand := tea.WrapExecCommand(c)
-
-	return tea.Exec(wrapperCommand, func(err error) tea.Msg {
+	return tea.ExecProcess(c, func(err error) tea.Msg {
 		os.Exit(1)
-		return programFinishedMsg{err}
+		return programFinishedMsg{err} // TODO improve the exiting process
 	})
 }
 
 // View Main view, represents the list of items to run
-func (m ListModel) View() string {
+func (m Model) View() string {
 
 	if m.runningCommand {
 		return ""
@@ -168,7 +167,7 @@ func (m ListModel) View() string {
 	description := ""
 	listItems := ""
 
-	for i, choice := range m.filteredChildren {
+	for i, choice := range *m.children {
 		cursor := " "
 		if m.cursor == i {
 			cursor = ">"
@@ -177,9 +176,9 @@ func (m ListModel) View() string {
 		listItems += fmt.Sprintf("%s %s\n", cursor, choice.Name)
 	}
 
-	if len(m.filteredChildren) > 0 {
+	if len(*m.children) > 0 {
 		choicesString = listItems
-		description = RenderDescription(m.filteredChildren[m.cursor])
+		description = RenderDescription(*(*m.children)[m.cursor])
 	}
 
 	s += m.renderColumns(choicesString, description)
@@ -187,7 +186,7 @@ func (m ListModel) View() string {
 	return s
 }
 
-func (m ListModel) renderColumns(itemList string, description string) string {
+func (m Model) renderColumns(itemList string, description string) string {
 	nameColumnWidth := 30
 	nameColumnStyle := lipgloss.NewStyle().
 		Margin(1, 3, 0, 0).

@@ -2,19 +2,24 @@ package main_view
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"launshr/navigation"
 	"launshr/parser"
 	"launshr/views/command_list"
+	"launshr/views/edit_node"
 )
 
-type state int
+type ViewIndex int
 
 const (
-	commandListView state = iota
+	CommandListView ViewIndex = iota
+	EditNodeView
 )
 
 type Model struct {
-	state            state
-	commandListModel command_list.ListModel
+	state            ViewIndex
+	commandListModel command_list.Model
+	editNodeModel    edit_node.Model
+	nodes            *parser.CommandNode
 }
 
 func (m Model) Init() tea.Cmd {
@@ -22,14 +27,23 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch m.state {
-	case commandListView:
-		var cmd tea.Cmd
-		m.commandListModel, cmd = m.commandListModel.Update(msg)
-		return m, cmd
-	default:
-		return m, nil
+	var cmd tea.Cmd
+	switch msg.(type) {
+	case navigation.NavigateEditNodeViewMsg:
+		m.editNodeModel = edit_node.NewEditNodeModel()
+		m.state = EditNodeView
+	case navigation.NavigateCommandListViewMsg:
+		m.state = CommandListView
 	}
+
+	switch m.state {
+	case EditNodeView:
+		m.editNodeModel, cmd = m.editNodeModel.Update(msg)
+	case CommandListView:
+		m.commandListModel, cmd = m.commandListModel.Update(msg)
+	}
+
+	return m, cmd
 }
 
 func InitialModel(node *parser.CommandNode) Model {
@@ -41,8 +55,10 @@ func InitialModel(node *parser.CommandNode) Model {
 
 func (m Model) View() string {
 	switch m.state {
-	case commandListView:
+	case CommandListView:
 		return m.commandListModel.View()
+	case EditNodeView:
+		return m.editNodeModel.View()
 	default:
 		return ""
 	}
