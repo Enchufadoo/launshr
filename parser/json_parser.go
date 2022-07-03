@@ -4,11 +4,11 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-const WorkingDirectoryKey = "wd"
-
 type JsonParser struct{}
 
-func (c *JsonParser) parseStructure(elementValue []byte, elementType jsonparser.ValueType, node *CommandNode) error {
+func (c *JsonParser) parseStructure(elementValue []byte, elementType jsonparser.ValueType,
+	node *CommandNode, fullKey []string) error {
+
 	config := c.GetConfigNode(elementValue)
 	switch elementType {
 	case jsonparser.Object:
@@ -17,8 +17,7 @@ func (c *JsonParser) parseStructure(elementValue []byte, elementType jsonparser.
 				switch dataType {
 				case jsonparser.Object:
 					if dataType == jsonparser.Object {
-						newNode, err := c.createNode(value, key, dataType, node, &config)
-
+						newNode, err := c.createNode(value, key, dataType, node, &config, fullKey)
 						if err != nil {
 							return err
 						}
@@ -46,7 +45,8 @@ func (c *JsonParser) ParseConfigFile(configFileContent []byte) (CommandNode, err
 		return commandTree, err
 	}
 
-	err = c.parseStructure(value, elementType, &commandTree)
+	var fullKey []string
+	err = c.parseStructure(value, elementType, &commandTree, fullKey)
 	if err != nil {
 		return commandTree, err
 	}
@@ -55,11 +55,14 @@ func (c *JsonParser) ParseConfigFile(configFileContent []byte) (CommandNode, err
 }
 
 func (c *JsonParser) createNode(value []byte, key []byte, dataType jsonparser.ValueType,
-	node *CommandNode, config *ConfigNode) (CommandNode, error) {
+	node *CommandNode, config *ConfigNode, fullKey []string) (CommandNode, error) {
 	newNode := CommandNode{}
 
-	name, _ := jsonparser.GetString(value, "name")
-	command, _ := jsonparser.GetString(value, "command")
+	fullKey = append(fullKey, string(key))
+	newNode.JsonFullKey = fullKey
+
+	name, _ := jsonparser.GetString(value, NameKey)
+	command, _ := jsonparser.GetString(value, CommandKey)
 
 	if config != nil && *config != (ConfigNode{}) {
 		newNode.Config = config
@@ -82,7 +85,7 @@ func (c *JsonParser) createNode(value []byte, key []byte, dataType jsonparser.Va
 
 		newNode.Name = "\u2630 " + name
 		newNode.Parent = node
-		err := c.parseStructure(value, dataType, &newNode)
+		err := c.parseStructure(value, dataType, &newNode, fullKey)
 
 		if err != nil {
 			return newNode, err
@@ -105,7 +108,7 @@ func (c *JsonParser) getWorkingDirectory(node *CommandNode, value []byte) string
 	return workingDirectory
 }
 
-// Parse the $config object for the children nodes to inherit
+// GetConfigNode Parse the $config object for the children nodes to inherit
 func (c *JsonParser) GetConfigNode(value []byte) ConfigNode {
 	configNode := ConfigNode{}
 	value, dataType, _, err := jsonparser.Get(value, ConfigNodeName)
