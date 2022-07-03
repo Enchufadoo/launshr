@@ -6,6 +6,7 @@ import (
 	"launshr/parser"
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
+	"os"
 )
 
 type ViewIndex int
@@ -20,6 +21,7 @@ type Model struct {
 	commandListModel command_list.Model
 	editNodeModel    edit_node.Model
 	nodes            *parser.CommandNode
+	configFilePath   string
 }
 
 func (m Model) Init() tea.Cmd {
@@ -29,6 +31,9 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg.(type) {
+	case navigation.SaveCommandMsg:
+		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
+		m.state = CommandListView
 	case navigation.NavigateEditNodeViewMsg:
 		m.editNodeModel = edit_node.NewEditNodeModel()
 		m.state = EditNodeView
@@ -46,10 +51,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func InitialModel(node *parser.CommandNode) Model {
+func InitialModel(node *parser.CommandNode, configFilePath string) Model {
 	clModel := command_list.InitialModel(node)
 	return Model{
 		commandListModel: clModel,
+		configFilePath:   configFilePath,
 	}
 }
 
@@ -61,5 +67,14 @@ func (m Model) View() string {
 		return m.editNodeModel.View()
 	default:
 		return ""
+	}
+}
+
+// The view shouldn't handle this kind of things, TODO create global app instance
+func (m Model) saveToFile(node *parser.CommandNode) {
+	err := parser.SaveToFile(node, m.configFilePath)
+	if err != nil {
+		println(err)
+		os.Exit(1)
 	}
 }

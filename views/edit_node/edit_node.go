@@ -156,7 +156,7 @@ func (m *Model) moveCursorUp() {
 
 func (m *Model) saveNodeData() (Model, tea.Cmd) {
 	m.SaveData()
-	return *m, navigation.EventNavigateCommandList()
+	return *m, navigation.EventSaveCommand(m.node)
 }
 
 func inputPressEnterHandler() tea.Cmd {

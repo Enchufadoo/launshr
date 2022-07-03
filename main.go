@@ -11,17 +11,17 @@ import (
 )
 
 type Reader interface {
-	ReadFile(filename string) ([]byte, error)
+	ReadFile(path string) ([]byte, error)
 }
 
 type FileReader struct{}
 
-func (r FileReader) ReadFile(filename string) ([]byte, error) {
-	return ioutil.ReadFile(filename)
+func (r FileReader) ReadFile(path string) ([]byte, error) {
+	return ioutil.ReadFile(path)
 }
 
 func main() {
-	configFileContent, err := openConfig(FileReader{})
+	configFileContent, configFilePath, err := openConfig(FileReader{})
 
 	if err != nil {
 		fmt.Println(err)
@@ -37,7 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	p := tea.NewProgram(main_view.InitialModel(&nodes))
+	p := tea.NewProgram(main_view.InitialModel(&nodes, configFilePath))
 
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
@@ -45,21 +45,21 @@ func main() {
 	}
 }
 
-func openConfig(r Reader) ([]byte, error) {
+func openConfig(r Reader) ([]byte, string, error) {
 
 	if len(os.Args) < 2 || os.Args[1] == "" {
-		return []byte{}, errors.New("you need to pass a configuration file as argument")
+		return []byte{}, "", errors.New("you need to pass a configuration file as argument")
 	}
 
-	configFile := os.Args[1]
+	configFilePath := os.Args[1]
 
-	content, errReadFile := r.ReadFile(configFile)
+	content, errReadFile := r.ReadFile(configFilePath)
 
 	if errReadFile != nil {
-		fmt.Println("Failed to open configuration file: " + configFile)
+		fmt.Println("Failed to open configuration file: " + configFilePath)
 		fmt.Println(errReadFile)
-		return []byte{}, errReadFile
+		return []byte{}, configFilePath, errReadFile
 	}
 
-	return content, errReadFile
+	return content, configFilePath, errReadFile
 }
