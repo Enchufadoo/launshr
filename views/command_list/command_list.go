@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"launshr/navigation"
 	"launshr/parser"
+	"launshr/shortcuts"
 	"os"
 	"os/exec"
 	"strings"
@@ -75,7 +76,7 @@ func generateTextInput() textinput.Model {
 	return ti
 }
 
-func InitialModel(node *parser.CommandNode) Model {
+func InitialModel(node *parser.CommandNode) tea.Model {
 	newModel := Model{}
 
 	filledModel := newModel.GenerateNodeModel(node)
@@ -87,7 +88,7 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
 
@@ -112,17 +113,19 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if m.cursor < len(*m.children)-1 {
 				m.cursor++
 			}
-		case "ctrl+h":
+		case shortcuts.EDIT_COMMAND_SHORTCUT:
 			return m, navigation.EventNavigateEditNode((*m.children)[m.cursor])
 		case "backspace":
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
-			selectedNode := (*m.children)[m.cursor]
-			if selectedNode.IsParent() {
-				m.textInput.SetValue("")
-				return m.GenerateNodeModel(selectedNode), cmd
+			if m.cursor < len(*m.children) {
+				selectedNode := (*m.children)[m.cursor]
+				if selectedNode.IsParent() {
+					m.textInput.SetValue("")
+					return m.GenerateNodeModel(selectedNode), cmd
+				}
+				return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 			}
-			return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 		default:
 			return m.GenerateNodeModel(m.currentNode), cmd
 		}

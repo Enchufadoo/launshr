@@ -31,7 +31,7 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msgType := msg.(type) {
@@ -82,7 +82,7 @@ func (m *Model) SaveData() {
 	m.node.WorkingDirectory = (*m.listOfElements)[WorkingDirectoryInput].GetText()
 }
 
-func NewEditNodeModel() Model {
+func InitialModel() tea.Model {
 	nameElement := input.NewTextInput("Name",
 		"Something to describe the command",
 		inputPressEnterHandler)

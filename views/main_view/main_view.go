@@ -4,8 +4,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"launshr/navigation"
 	"launshr/parser"
+	"launshr/shortcuts"
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
+	"launshr/views/help"
 	"os"
 )
 
@@ -14,60 +16,69 @@ type ViewIndex int
 const (
 	CommandListView ViewIndex = iota
 	EditNodeView
+	HelpView
 )
 
 type Model struct {
-	state            ViewIndex
-	commandListModel command_list.Model
-	editNodeModel    edit_node.Model
-	nodes            *parser.CommandNode
-	configFilePath   string
+	state          ViewIndex
+	currentModel   tea.Model
+	nodes          *parser.CommandNode
+	configFilePath string
+	lastView       ViewIndex
 }
 
 func (m Model) Init() tea.Cmd {
 	return nil
 }
 
+func (m *Model) setView(index ViewIndex) {
+	m.lastView = m.state
+	m.state = index
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	switch msg.(type) {
+
+	switch msgType := msg.(type) {
+	case tea.KeyMsg:
+		switch msgType.String() {
+		case shortcuts.HELP_SHORTCUT:
+			if m.state == HelpView {
+				m.currentModel = command_list.InitialModel(m.nodes)
+				m.setView(CommandListView)
+			} else {
+				m.currentModel = help.InitialModel()
+				m.setView(HelpView)
+			}
+
+		}
 	case navigation.SaveCommandMsg:
 		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
-		m.state = CommandListView
+		m.setView(CommandListView)
 	case navigation.NavigateEditNodeViewMsg:
-		m.editNodeModel = edit_node.NewEditNodeModel()
-		m.state = EditNodeView
+		m.currentModel = edit_node.InitialModel()
+		m.setView(EditNodeView)
 	case navigation.NavigateCommandListViewMsg:
-		m.state = CommandListView
+		m.currentModel = command_list.InitialModel(m.nodes)
+		m.setView(CommandListView)
 	}
 
-	switch m.state {
-	case EditNodeView:
-		m.editNodeModel, cmd = m.editNodeModel.Update(msg)
-	case CommandListView:
-		m.commandListModel, cmd = m.commandListModel.Update(msg)
-	}
+	m.currentModel, cmd = m.currentModel.Update(msg)
 
 	return m, cmd
 }
 
-func InitialModel(node *parser.CommandNode, configFilePath string) Model {
-	clModel := command_list.InitialModel(node)
+func InitialModel(nodes *parser.CommandNode, configFilePath string) Model {
+	clModel := command_list.InitialModel(nodes)
 	return Model{
-		commandListModel: clModel,
-		configFilePath:   configFilePath,
+		nodes:          nodes,
+		currentModel:   clModel,
+		configFilePath: configFilePath,
 	}
 }
 
 func (m Model) View() string {
-	switch m.state {
-	case CommandListView:
-		return m.commandListModel.View()
-	case EditNodeView:
-		return m.editNodeModel.View()
-	default:
-		return ""
-	}
+	return m.currentModel.View()
 }
 
 // The view shouldn't handle this kind of things, TODO create global app instance
