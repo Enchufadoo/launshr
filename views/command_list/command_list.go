@@ -75,7 +75,7 @@ func generateTextInput() textinput.Model {
 	return ti
 }
 
-func InitialModel(node *parser.CommandNode) Model {
+func InitialModel(node *parser.CommandNode) tea.Model {
 	newModel := Model{}
 
 	filledModel := newModel.GenerateNodeModel(node)
@@ -87,7 +87,7 @@ func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
 
