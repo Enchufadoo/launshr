@@ -17,6 +17,7 @@ var (
 	selectedItemStyle = lipgloss.NewStyle()
 	style             = lipgloss.NewStyle().
 				BorderStyle(lipgloss.NormalBorder()).
+				BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
 				BorderTop(true).Width(30)
 )
 
@@ -164,13 +165,18 @@ func (m Model) View() string {
 		viewTitle = m.currentNode.Config.Title
 	}
 
-	s := selectedItemStyle.Render(viewTitle)
+	if m.currentNode.IsParent() {
+		viewTitle += "\n"
+		viewTitle += m.currentNode.Name
+	}
 
+	s := selectedItemStyle.Render(viewTitle)
 	s += "\n"
+
 	s += style.Render("")
 	s += "\n"
 	s += m.textInput.View()
-	s += "\n\n"
+	s += "\n"
 
 	choicesString := "No results found"
 	description := ""
