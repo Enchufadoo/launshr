@@ -10,6 +10,11 @@ func (c *JsonParser) parseStructure(elementValue []byte, elementType jsonparser.
 	node *CommandNode, fullKey []string) error {
 
 	config := c.GetConfigNode(elementValue)
+
+	if config != (ConfigNode{}) {
+		node.Config = &config
+	}
+
 	switch elementType {
 	case jsonparser.Object:
 		handler := func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
@@ -116,7 +121,10 @@ func (c *JsonParser) GetConfigNode(value []byte) ConfigNode {
 	if err == nil {
 		if dataType == jsonparser.Object {
 			wd, _ := jsonparser.GetString(value, WorkingDirectoryKey)
+			title, _ := jsonparser.GetString(value, ConfigTitleKey)
+
 			configNode.WorkingDirectory = wd
+			configNode.Title = title
 		}
 	}
 

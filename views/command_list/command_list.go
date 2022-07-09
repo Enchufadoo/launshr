@@ -158,7 +158,13 @@ func (m Model) View() string {
 		return ""
 	}
 
-	s := selectedItemStyle.Render("Command Menu")
+	viewTitle := "Command Menu"
+
+	if m.currentNode.Config.Title != "" {
+		viewTitle = m.currentNode.Config.Title
+	}
+
+	s := selectedItemStyle.Render(viewTitle)
 
 	s += "\n"
 	s += style.Render("")
