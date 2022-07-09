@@ -118,12 +118,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "backspace":
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
-			selectedNode := (*m.children)[m.cursor]
-			if selectedNode.IsParent() {
-				m.textInput.SetValue("")
-				return m.GenerateNodeModel(selectedNode), cmd
+			if m.cursor < len(*m.children) {
+				selectedNode := (*m.children)[m.cursor]
+				if selectedNode.IsParent() {
+					m.textInput.SetValue("")
+					return m.GenerateNodeModel(selectedNode), cmd
+				}
+				return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 			}
-			return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 		default:
 			return m.GenerateNodeModel(m.currentNode), cmd
 		}
