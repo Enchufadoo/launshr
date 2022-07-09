@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"launshr/navigation"
 	"launshr/parser"
+	"launshr/shortcuts"
 	"os"
 	"os/exec"
 	"strings"
@@ -112,7 +113,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(*m.children)-1 {
 				m.cursor++
 			}
-		case "ctrl+h":
+		case shortcuts.EDIT_COMMAND_SHORTCUT:
 			return m, navigation.EventNavigateEditNode((*m.children)[m.cursor])
 		case "backspace":
 			return m.GenerateNodeModel(m.currentNode), cmd

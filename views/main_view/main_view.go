@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"launshr/navigation"
 	"launshr/parser"
+	"launshr/shortcuts"
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
 	"launshr/views/help"
@@ -41,7 +42,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msgType := msg.(type) {
 	case tea.KeyMsg:
 		switch msgType.String() {
-		case "f2":
+		case shortcuts.HELP_SHORTCUT:
 			if m.state == HelpView {
 				m.currentModel = command_list.InitialModel(m.nodes)
 				m.setView(CommandListView)
