@@ -13,14 +13,6 @@ import (
 	"strings"
 )
 
-var (
-	selectedItemStyle = lipgloss.NewStyle()
-	style             = lipgloss.NewStyle().
-				BorderStyle(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
-				BorderTop(true).Width(30)
-)
-
 type Model struct {
 	currentNode     *parser.CommandNode
 	cursor          int
@@ -29,6 +21,7 @@ type Model struct {
 	textFilterEmpty bool
 	runningCommand  bool
 	children        *[]*parser.CommandNode
+	vs              *ViewStyle
 }
 
 type programFinishedMsg struct{ err error }
@@ -42,6 +35,7 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 		cursor:          0,
 		textFilterEmpty: m.textInput.Value() == "",
 		children:        m.filterNodes(m.textInput.Value(), node),
+		vs:              NewViewStyle(),
 	}
 }
 
@@ -159,47 +153,11 @@ func (m Model) View() string {
 		return ""
 	}
 
-	viewTitle := "Command Menu"
-
-	if m.currentNode.Config != nil {
-		if m.currentNode.Config.Title != "" {
-			viewTitle = m.currentNode.Config.Title
-		}
-
-	}
-
-	if m.currentNode.IsParent() {
-		viewTitle += "\n"
-		viewTitle += m.currentNode.Name
-	}
-
-	s := selectedItemStyle.Render(viewTitle)
-	s += "\n"
-
-	s += style.Render("")
-	s += "\n"
-	s += m.textInput.View()
-	s += "\n"
-
-	choicesString := "No results found"
-	description := ""
-	listItems := ""
-
-	for i, choice := range *m.children {
-		cursor := " "
-		if m.cursor == i {
-			cursor = ">"
-		}
-
-		listItems += fmt.Sprintf("%s %s\n", cursor, choice.Name)
-	}
-
-	if len(*m.children) > 0 {
-		choicesString = listItems
-		description = RenderDescription(*(*m.children)[m.cursor])
-	}
-
-	s += m.renderColumns(choicesString, description)
+	s := lipgloss.JoinVertical(lipgloss.Left,
+		m.renderHeader(),
+		m.vs.horizontalDivider.Render(m.textInput.View()),
+		m.renderItemsList(),
+	)
 
 	return s
 }
@@ -220,4 +178,52 @@ func (m Model) renderColumns(itemList string, description string) string {
 		nameColumnStyle.Copy().Render(itemList),
 		descriptionColumnStyle.Copy().Render(description),
 	)
+}
+
+func (m *Model) renderHeader() string {
+	appName := m.vs.title.Render("Launshr")
+
+	viewHeader := lipgloss.JoinVertical(lipgloss.Center, appName)
+
+	var subtitleComponents []string
+
+	if m.currentNode.Config != nil {
+		if m.currentNode.Config.Title != "" {
+			subtitleComponents = append(subtitleComponents, m.currentNode.Config.Title)
+		}
+	}
+
+	if m.currentNode.IsParent() {
+		if m.currentNode.Name != "" {
+			subtitleComponents = append(subtitleComponents, m.currentNode.Name)
+		}
+	}
+
+	subtitle := strings.Join(subtitleComponents, " - ")
+
+	viewHeader = lipgloss.JoinVertical(lipgloss.Center, viewHeader, subtitle)
+
+	return viewHeader
+}
+
+func (m *Model) renderItemsList() string {
+	choicesString := "No results found"
+	description := ""
+	listItems := ""
+
+	for i, choice := range *m.children {
+		cursor := " "
+		if m.cursor == i {
+			cursor = ">"
+		}
+
+		listItems += fmt.Sprintf("%s %s\n", cursor, choice.Name)
+	}
+
+	if len(*m.children) > 0 {
+		choicesString = listItems
+		description = RenderDescription(*(*m.children)[m.cursor])
+	}
+
+	return m.renderColumns(choicesString, description)
 }
