@@ -161,8 +161,11 @@ func (m Model) View() string {
 
 	viewTitle := "Command Menu"
 
-	if m.currentNode.Config.Title != "" {
-		viewTitle = m.currentNode.Config.Title
+	if m.currentNode.Config != nil {
+		if m.currentNode.Config.Title != "" {
+			viewTitle = m.currentNode.Config.Title
+		}
+
 	}
 
 	if m.currentNode.IsParent() {
