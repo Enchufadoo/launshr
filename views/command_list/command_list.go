@@ -13,14 +13,6 @@ import (
 	"strings"
 )
 
-var (
-	selectedItemStyle = lipgloss.NewStyle()
-	style             = lipgloss.NewStyle().
-				BorderStyle(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
-				BorderTop(true).Width(30)
-)
-
 type Model struct {
 	currentNode     *parser.CommandNode
 	cursor          int
@@ -29,6 +21,7 @@ type Model struct {
 	textFilterEmpty bool
 	runningCommand  bool
 	children        *[]*parser.CommandNode
+	vs              *ViewStyle
 }
 
 type programFinishedMsg struct{ err error }
@@ -42,6 +35,7 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 		cursor:          0,
 		textFilterEmpty: m.textInput.Value() == "",
 		children:        m.filterNodes(m.textInput.Value(), node),
+		vs:              NewViewStyle(),
 	}
 }
 
@@ -71,7 +65,7 @@ func generateTextInput() textinput.Model {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	ti.Prompt = ""
+	ti.Prompt = "  "
 	ti.SetCursorMode(textinput.CursorHide)
 
 	return ti
@@ -159,25 +153,62 @@ func (m Model) View() string {
 		return ""
 	}
 
-	viewTitle := "Command Menu"
+	s := lipgloss.JoinVertical(lipgloss.Left,
+		m.renderHeader(),
+		m.vs.horizontalDivider.Render(m.textInput.View()),
+		m.renderItemsList(),
+	)
 
-	if m.currentNode.Config.Title != "" {
-		viewTitle = m.currentNode.Config.Title
+	return s
+}
+
+func (m *Model) renderColumns(itemList string, description string, numberItems int) string {
+
+	dividerLines := 4
+	dividerString := ""
+
+	if numberItems > 0 {
+		if numberItems > dividerLines {
+			dividerLines = numberItems
+		}
+		dividerString = m.vs.separatorColumnStyle.Render(strings.Repeat("\n", dividerLines))
+	}
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		m.vs.nameColumnStyle.Render(itemList),
+		dividerString,
+		m.vs.descriptionColumnStyle.MarginLeft(1).Render(description),
+	)
+}
+
+func (m *Model) renderHeader() string {
+	appName := m.vs.title.Render("Launshr")
+
+	viewHeader := lipgloss.JoinVertical(lipgloss.Center, appName)
+
+	var subtitleComponents []string
+
+	if m.currentNode.Config != nil {
+		if m.currentNode.Config.Title != "" {
+			subtitleComponents = append(subtitleComponents, m.currentNode.Config.Title)
+		}
 	}
 
 	if m.currentNode.IsParent() {
-		viewTitle += "\n"
-		viewTitle += m.currentNode.Name
+		if m.currentNode.Name != "" {
+			subtitleComponents = append(subtitleComponents, m.currentNode.Name)
+		}
 	}
 
-	s := selectedItemStyle.Render(viewTitle)
-	s += "\n"
+	subtitle := strings.Join(subtitleComponents, " - ")
 
-	s += style.Render("")
-	s += "\n"
-	s += m.textInput.View()
-	s += "\n"
+	viewHeader = lipgloss.JoinVertical(lipgloss.Center, viewHeader, subtitle)
 
+	return viewHeader
+}
+
+func (m *Model) renderItemsList() string {
 	choicesString := "No results found"
 	description := ""
 	listItems := ""
@@ -192,29 +223,15 @@ func (m Model) View() string {
 	}
 
 	if len(*m.children) > 0 {
-		choicesString = listItems
+		choicesString = strings.Trim(listItems, "\n")
 		description = RenderDescription(*(*m.children)[m.cursor])
 	}
 
-	s += m.renderColumns(choicesString, description)
+	headers := lipgloss.JoinHorizontal(lipgloss.Top,
+		m.vs.nameHeader.Render("  Name"),
+		m.vs.descriptionHeader.Render("  Description"))
 
-	return s
-}
+	return lipgloss.JoinVertical(lipgloss.Top, headers,
+		m.renderColumns(choicesString, description, len(*m.children)))
 
-func (m Model) renderColumns(itemList string, description string) string {
-	nameColumnWidth := 30
-	nameColumnStyle := lipgloss.NewStyle().
-		Margin(1, 3, 0, 0).
-		Width(nameColumnWidth)
-
-	descriptionColumnWidth := 50
-	descriptionColumnStyle := lipgloss.NewStyle().
-		Margin(1, 3, 0, 0).
-		Width(descriptionColumnWidth)
-
-	return lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		nameColumnStyle.Copy().Render(itemList),
-		descriptionColumnStyle.Copy().Render(description),
-	)
 }
