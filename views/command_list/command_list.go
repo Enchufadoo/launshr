@@ -65,7 +65,7 @@ func generateTextInput() textinput.Model {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	ti.Prompt = ""
+	ti.Prompt = "  "
 	ti.SetCursorMode(textinput.CursorHide)
 
 	return ti
@@ -162,21 +162,23 @@ func (m Model) View() string {
 	return s
 }
 
-func (m Model) renderColumns(itemList string, description string) string {
-	nameColumnWidth := 30
-	nameColumnStyle := lipgloss.NewStyle().
-		Margin(1, 3, 0, 0).
-		Width(nameColumnWidth)
+func (m *Model) renderColumns(itemList string, description string, numberItems int) string {
 
-	descriptionColumnWidth := 50
-	descriptionColumnStyle := lipgloss.NewStyle().
-		Margin(1, 3, 0, 0).
-		Width(descriptionColumnWidth)
+	dividerLines := 4
+	dividerString := ""
+
+	if numberItems > 0 {
+		if numberItems > dividerLines {
+			dividerLines = numberItems
+		}
+		dividerString = m.vs.separatorColumnStyle.Render(strings.Repeat("\n", dividerLines))
+	}
 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		nameColumnStyle.Copy().Render(itemList),
-		descriptionColumnStyle.Copy().Render(description),
+		m.vs.nameColumnStyle.Render(itemList),
+		dividerString,
+		m.vs.descriptionColumnStyle.MarginLeft(1).Render(description),
 	)
 }
 
@@ -221,9 +223,15 @@ func (m *Model) renderItemsList() string {
 	}
 
 	if len(*m.children) > 0 {
-		choicesString = listItems
+		choicesString = strings.Trim(listItems, "\n")
 		description = RenderDescription(*(*m.children)[m.cursor])
 	}
 
-	return m.renderColumns(choicesString, description)
+	headers := lipgloss.JoinHorizontal(lipgloss.Top,
+		m.vs.nameHeader.Render("  Name"),
+		m.vs.descriptionHeader.Render("  Description"))
+
+	return lipgloss.JoinVertical(lipgloss.Top, headers,
+		m.renderColumns(choicesString, description, len(*m.children)))
+
 }
