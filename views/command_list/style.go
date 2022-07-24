@@ -3,6 +3,7 @@ package command_list
 import (
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
+	"launshr/app_style"
 	"os"
 )
 
@@ -37,7 +38,7 @@ func NewViewStyle() *ViewStyle {
 	v.selectedItem = lipgloss.NewStyle()
 	v.horizontalDivider = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
+		BorderForeground(lipgloss.AdaptiveColor(app_style.BackColor())).
 		BorderTop(true).BorderBottom(true).Inherit(v.fullWidth)
 
 	v.title = v.fullWidthCenter.Copy().Bold(true)
@@ -46,27 +47,27 @@ func NewViewStyle() *ViewStyle {
 	v.nameColumnStyle = lipgloss.NewStyle().
 		Width(nameColumnWidth)
 
-	descriptionColumnWidth := 50
+	descriptionColumnWidth := physicalWidth - nameColumnWidth
 	v.descriptionColumnStyle = lipgloss.NewStyle().
 		Width(descriptionColumnWidth)
 
 	v.separatorColumnStyle = lipgloss.NewStyle().
-		BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
+		BorderForeground(lipgloss.AdaptiveColor(app_style.BackColor())).
 		Border(lipgloss.NormalBorder(), false, false, false, true)
 
 	listBorder := lipgloss.Border{Bottom: "―"}
 
-	v.nameHeader = lipgloss.NewStyle().Width(30).
+	v.nameHeader = lipgloss.NewStyle().Width(nameColumnWidth).
 		BorderBottom(true).BorderStyle(listBorder).
-		BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
+		BorderForeground(lipgloss.AdaptiveColor(app_style.BackColor())).
 		Bold(true).
-		Foreground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#c7c7c7"})
+		Foreground(lipgloss.AdaptiveColor(app_style.SecondaryColor()))
 
-	v.descriptionHeader = lipgloss.NewStyle().Width(physicalWidth - lipgloss.Width("  Description")).
-		BorderForeground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}).
+	v.descriptionHeader = lipgloss.NewStyle().Width(descriptionColumnWidth).
+		BorderForeground(lipgloss.AdaptiveColor(app_style.BackColor())).
 		BorderBottom(true).BorderStyle(listBorder).
 		Bold(true).
-		Foreground(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#c7c7c7"})
+		Foreground(lipgloss.AdaptiveColor(app_style.SecondaryColor()))
 
 	return v
 
