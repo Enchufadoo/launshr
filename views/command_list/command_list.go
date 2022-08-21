@@ -71,7 +71,7 @@ func generateTextInput() textinput.Model {
 	return ti
 }
 
-func InitialModel(node *parser.CommandNode) tea.Model {
+func New(node *parser.CommandNode) tea.Model {
 	newModel := Model{}
 
 	filledModel := newModel.GenerateNodeModel(node)
@@ -108,8 +108,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(*m.children)-1 {
 				m.cursor++
 			}
-		case shortcuts.EDIT_COMMAND_SHORTCUT:
+		case shortcuts.EditCommandShortcut:
 			return m, navigation.EventNavigateEditNode((*m.children)[m.cursor])
+		case shortcuts.AddCommandShortcut:
+			return m, navigation.EventNavigateAddNode((*m.children)[m.cursor])
 		case "backspace":
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
