@@ -15,7 +15,7 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 	return Model{}
 }
 
-func InitialModel() Model {
+func New() Model {
 	return Model{}
 }
 

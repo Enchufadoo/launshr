@@ -82,7 +82,8 @@ func (m *Model) SaveData() {
 	m.node.WorkingDirectory = (*m.listOfElements)[WorkingDirectoryInput].GetText()
 }
 
-func InitialModel() tea.Model {
+func New() tea.Model {
+
 	nameElement := input.NewTextInput("Name",
 		"Something to describe the command",
 		inputPressEnterHandler)

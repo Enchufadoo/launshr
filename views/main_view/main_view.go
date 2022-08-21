@@ -5,6 +5,7 @@ import (
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
+	"launshr/views/add_node"
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
 	"launshr/views/help"
@@ -16,6 +17,7 @@ type ViewIndex int
 const (
 	CommandListView ViewIndex = iota
 	EditNodeView
+	AddNodeView
 	HelpView
 )
 
@@ -24,7 +26,6 @@ type Model struct {
 	currentModel   tea.Model
 	nodes          *parser.CommandNode
 	configFilePath string
-	lastView       ViewIndex
 }
 
 func (m Model) Init() tea.Cmd {
@@ -32,8 +33,23 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m *Model) setView(index ViewIndex) {
-	m.lastView = m.state
 	m.state = index
+}
+
+func (m *Model) showView(index ViewIndex, msg tea.Msg) {
+	m.setView(index)
+
+	switch index {
+	case HelpView:
+		m.currentModel = help.New()
+	case CommandListView:
+		m.currentModel = command_list.New(m.nodes)
+	case EditNodeView:
+		m.currentModel = edit_node.New()
+	case AddNodeView:
+		m.currentModel = add_node.New()
+	}
+
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -42,25 +58,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msgType := msg.(type) {
 	case tea.KeyMsg:
 		switch msgType.String() {
-		case shortcuts.HELP_SHORTCUT:
+		case shortcuts.HelpShortcut:
 			if m.state == HelpView {
-				m.currentModel = command_list.InitialModel(m.nodes)
-				m.setView(CommandListView)
+				m.showView(CommandListView, msg)
 			} else {
-				m.currentModel = help.InitialModel()
-				m.setView(HelpView)
+				m.showView(HelpView, msg)
 			}
 
 		}
 	case navigation.SaveCommandMsg:
 		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
-		m.setView(CommandListView)
+		m.showView(CommandListView, msg)
 	case navigation.NavigateEditNodeViewMsg:
-		m.currentModel = edit_node.InitialModel()
-		m.setView(EditNodeView)
+		m.showView(EditNodeView, msg)
+	case navigation.NavigateAddNodeViewMsg:
+		m.showView(AddNodeView, msg)
 	case navigation.NavigateCommandListViewMsg:
-		m.currentModel = command_list.InitialModel(m.nodes)
-		m.setView(CommandListView)
+		m.showView(CommandListView, msg)
 	}
 
 	m.currentModel, cmd = m.currentModel.Update(msg)
@@ -69,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func InitialModel(nodes *parser.CommandNode, configFilePath string) Model {
-	clModel := command_list.InitialModel(nodes)
+	clModel := command_list.New(nodes)
 	return Model{
 		nodes:          nodes,
 		currentModel:   clModel,
