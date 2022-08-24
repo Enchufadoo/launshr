@@ -8,6 +8,7 @@ import (
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
+	"launshr/views/header"
 	"os"
 	"os/exec"
 	"strings"
@@ -18,6 +19,7 @@ type Model struct {
 	cursor          int
 	selected        map[int]struct{}
 	textInput       textinput.Model
+	header          header.Model
 	textFilterEmpty bool
 	runningCommand  bool
 	children        *[]*parser.CommandNode
@@ -29,6 +31,7 @@ type programFinishedMsg struct{ err error }
 // GenerateNodeModel Used as a convenience method to update the model data
 func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 	return Model{
+		header:          m.header,
 		textInput:       m.textInput,
 		selected:        make(map[int]struct{}),
 		currentNode:     node,
@@ -76,6 +79,7 @@ func New(node *parser.CommandNode) tea.Model {
 
 	filledModel := newModel.GenerateNodeModel(node)
 	filledModel.textInput = generateTextInput()
+	filledModel.header = header.New()
 	return filledModel
 }
 
@@ -85,7 +89,9 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
 	m.textInput, cmd = m.textInput.Update(msg)
+	m.header, cmd = m.header.Update(msg)
 
 	switch msg := msg.(type) {
 	case programFinishedMsg:
@@ -101,7 +107,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "left":
 			if m.currentNode.IsParent() {
-				return m.GenerateNodeModel(m.currentNode.Parent), cmd
+				return m.GenerateNodeModel(m.currentNode.Parent),
+					header.EventUpdateHeader(m.renderHeader(m.currentNode.Parent))
 			}
 
 		case "down":
@@ -119,7 +126,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				selectedNode := (*m.children)[m.cursor]
 				if selectedNode.IsParent() {
 					m.textInput.SetValue("")
-					return m.GenerateNodeModel(selectedNode), cmd
+					return m.GenerateNodeModel(selectedNode), header.EventUpdateHeader(m.renderHeader(selectedNode))
 				}
 				return Model{runningCommand: true}, runCommand(selectedNode.Command, selectedNode.WorkingDirectory)
 			}
@@ -156,7 +163,7 @@ func (m Model) View() string {
 	}
 
 	s := lipgloss.JoinVertical(lipgloss.Left,
-		m.renderHeader(),
+		m.header.View(),
 		m.vs.horizontalDivider.Render(m.textInput.View()),
 		m.renderItemsList(),
 	)
@@ -184,30 +191,24 @@ func (m *Model) renderColumns(itemList string, description string, numberItems i
 	)
 }
 
-func (m *Model) renderHeader() string {
-	appName := m.vs.title.Render("Launshr")
-
-	viewHeader := lipgloss.JoinVertical(lipgloss.Center, appName)
-
+func (m *Model) renderHeader(node *parser.CommandNode) string {
 	var subtitleComponents []string
 
-	if m.currentNode.Config != nil {
-		if m.currentNode.Config.Title != "" {
-			subtitleComponents = append(subtitleComponents, m.currentNode.Config.Title)
+	if node.Config != nil {
+		if node.Config.Title != "" {
+			subtitleComponents = append(subtitleComponents, node.Config.Title)
 		}
 	}
 
-	if m.currentNode.IsParent() {
-		if m.currentNode.Name != "" {
-			subtitleComponents = append(subtitleComponents, m.currentNode.Name)
+	if node.IsParent() {
+		if node.Name != "" {
+			subtitleComponents = append(subtitleComponents, node.Name)
 		}
 	}
 
 	subtitle := strings.Join(subtitleComponents, " - ")
 
-	viewHeader = lipgloss.JoinVertical(lipgloss.Center, viewHeader, subtitle)
-
-	return viewHeader
+	return subtitle
 }
 
 func (m *Model) renderItemsList() string {

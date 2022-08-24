@@ -7,6 +7,7 @@ import (
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/views/edit_node/node_data_form"
+	"launshr/views/header"
 )
 
 type SaveNodeDataMsg struct{}
@@ -17,6 +18,7 @@ type Model struct {
 	selectedElement int
 	listOfElements  *map[int]form_element.FormElement
 	editNodeForm    tea.Model
+	header          header.Model
 	node            *parser.CommandNode
 }
 
@@ -33,7 +35,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	s := lipgloss.JoinVertical(lipgloss.Left,
+	s := lipgloss.JoinVertical(lipgloss.Top,
+		m.header.View(),
+		"",
 		m.editNodeForm.View(),
 	)
 
@@ -45,7 +49,10 @@ func (m *Model) SaveData() {
 }
 
 func New() tea.Model {
+	addHeader := header.New()
+	addHeader.SubHeaderText = "Add a new command"
 	return Model{
+		header:       addHeader,
 		editNodeForm: node_data_form.New(),
 	}
 }

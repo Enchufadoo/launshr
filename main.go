@@ -37,8 +37,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	p := tea.NewProgram(main_view.InitialModel(&nodes, configFilePath), tea.WithAltScreen())
-	
+	mainView := main_view.New(&nodes, configFilePath)
+
+	mainView.SetCurrentView(main_view.CommandListView)
+	p := tea.NewProgram(mainView, tea.WithAltScreen())
+
 	if err := p.Start(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		p.Quit()

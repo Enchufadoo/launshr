@@ -2,11 +2,13 @@ package edit_node
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"launshr/components/button"
 	"launshr/components/form_element"
 	"launshr/components/input"
 	"launshr/navigation"
 	"launshr/parser"
+	"launshr/views/header"
 )
 
 const (
@@ -25,6 +27,7 @@ type Model struct {
 	selectedElement int
 	listOfElements  *map[int]form_element.FormElement
 	node            *parser.CommandNode
+	header          header.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -66,14 +69,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	viewString := "Edit the command data\n\n"
 
-	viewString += (*m.listOfElements)[NameInput].Render() + "\n"
-	viewString += (*m.listOfElements)[CommandInput].Render() + "\n"
-	viewString += (*m.listOfElements)[WorkingDirectoryInput].Render() + "\n\n"
+	return lipgloss.JoinVertical(lipgloss.Top,
+		m.header.View(),
+		"",
+		(*m.listOfElements)[NameInput].Render(),
+		(*m.listOfElements)[CommandInput].Render(),
+		(*m.listOfElements)[WorkingDirectoryInput].Render(),
+		"",
+		(*m.listOfElements)[SaveButton].Render()+"\t"+(*m.listOfElements)[CancelButton].Render(),
+	)
 
-	viewString += (*m.listOfElements)[SaveButton].Render() + "\t" + (*m.listOfElements)[CancelButton].Render()
-	return viewString
 }
 
 func (m *Model) SaveData() {
@@ -123,6 +129,8 @@ func New() tea.Model {
 }
 
 func (m *Model) initializeData(node *parser.CommandNode) {
+	m.header = header.New()
+	m.header.SubHeaderText = "Edit the command data"
 	m.node = node
 	(*m.listOfElements)[NameInput].SetText(node.Name)
 	(*m.listOfElements)[CommandInput].SetText(node.Command)

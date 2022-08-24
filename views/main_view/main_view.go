@@ -2,6 +2,7 @@ package main_view
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
@@ -36,7 +37,7 @@ func (m *Model) setView(index ViewIndex) {
 	m.state = index
 }
 
-func (m *Model) showView(index ViewIndex, msg tea.Msg) {
+func (m *Model) SetCurrentView(index ViewIndex) {
 	m.setView(index)
 
 	switch index {
@@ -60,21 +61,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msgType.String() {
 		case shortcuts.HelpShortcut:
 			if m.state == HelpView {
-				m.showView(CommandListView, msg)
+				m.SetCurrentView(CommandListView)
 			} else {
-				m.showView(HelpView, msg)
+				m.SetCurrentView(HelpView)
 			}
 
 		}
 	case navigation.SaveCommandMsg:
 		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
-		m.showView(CommandListView, msg)
+		m.SetCurrentView(CommandListView)
 	case navigation.NavigateEditNodeViewMsg:
-		m.showView(EditNodeView, msg)
+		m.SetCurrentView(EditNodeView)
 	case navigation.NavigateAddNodeViewMsg:
-		m.showView(AddNodeView, msg)
+		m.SetCurrentView(AddNodeView)
 	case navigation.NavigateCommandListViewMsg:
-		m.showView(CommandListView, msg)
+		m.SetCurrentView(CommandListView)
 	}
 
 	m.currentModel, cmd = m.currentModel.Update(msg)
@@ -82,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func InitialModel(nodes *parser.CommandNode, configFilePath string) Model {
+func New(nodes *parser.CommandNode, configFilePath string) Model {
 	clModel := command_list.New(nodes)
 	return Model{
 		nodes:          nodes,
@@ -92,7 +93,9 @@ func InitialModel(nodes *parser.CommandNode, configFilePath string) Model {
 }
 
 func (m Model) View() string {
-	return m.currentModel.View()
+	return lipgloss.JoinVertical(lipgloss.Top,
+		m.currentModel.View(),
+	)
 }
 
 // The view shouldn't handle this kind of things, TODO create global app instance
