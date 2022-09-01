@@ -2,9 +2,11 @@ package main_view
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
+	"launshr/views/add_node"
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
 	"launshr/views/help"
@@ -13,27 +15,14 @@ import (
 
 type ViewIndex int
 
-const (
-	CommandListView ViewIndex = iota
-	EditNodeView
-	HelpView
-)
-
 type Model struct {
-	state          ViewIndex
 	currentModel   tea.Model
 	nodes          *parser.CommandNode
 	configFilePath string
-	lastView       ViewIndex
 }
 
 func (m Model) Init() tea.Cmd {
 	return nil
-}
-
-func (m *Model) setView(index ViewIndex) {
-	m.lastView = m.state
-	m.state = index
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -42,25 +31,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msgType := msg.(type) {
 	case tea.KeyMsg:
 		switch msgType.String() {
-		case shortcuts.HELP_SHORTCUT:
-			if m.state == HelpView {
-				m.currentModel = command_list.InitialModel(m.nodes)
-				m.setView(CommandListView)
+		case shortcuts.HelpShortcut:
+			_, ok := m.currentModel.(help.Model)
+			if ok {
+				m.NavigateToCommandList()
 			} else {
-				m.currentModel = help.InitialModel()
-				m.setView(HelpView)
+				m.currentModel = help.New()
 			}
 
 		}
 	case navigation.SaveCommandMsg:
 		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
-		m.setView(CommandListView)
+		m.NavigateToCommandList()
+	case add_node.AddCommandMsg:
+		m.addAndSaveToFile(msg.(add_node.AddCommandMsg))
+		m.NavigateToCommandList()
 	case navigation.NavigateEditNodeViewMsg:
-		m.currentModel = edit_node.InitialModel()
-		m.setView(EditNodeView)
+		m.currentModel = edit_node.New(msg.(navigation.NavigateEditNodeViewMsg))
+	case navigation.NavigateAddNodeViewMsg:
+		m.currentModel = add_node.New(msg.(navigation.NavigateAddNodeViewMsg))
 	case navigation.NavigateCommandListViewMsg:
-		m.currentModel = command_list.InitialModel(m.nodes)
-		m.setView(CommandListView)
+		m.NavigateToCommandList()
 	}
 
 	m.currentModel, cmd = m.currentModel.Update(msg)
@@ -68,22 +59,47 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func InitialModel(nodes *parser.CommandNode, configFilePath string) Model {
-	clModel := command_list.InitialModel(nodes)
-	return Model{
+func (m *Model) NavigateToCommandList() {
+	m.currentModel = command_list.New(m.nodes)
+}
+
+func New(nodes *parser.CommandNode, configFilePath string) Model {
+
+	newModel := Model{
 		nodes:          nodes,
-		currentModel:   clModel,
 		configFilePath: configFilePath,
 	}
+
+	newModel.NavigateToCommandList()
+
+	return newModel
 }
 
 func (m Model) View() string {
-	return m.currentModel.View()
+	return lipgloss.JoinVertical(lipgloss.Top,
+		m.currentModel.View(),
+	)
 }
 
 // The view shouldn't handle this kind of things, TODO create global app instance
 func (m Model) saveToFile(node *parser.CommandNode) {
-	err := parser.SaveToFile(node, m.configFilePath)
+	err := parser.SaveEditToFile(node, m.configFilePath)
+	if err != nil {
+		println(err)
+		os.Exit(1)
+	}
+}
+
+func (m Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
+
+	n := parser.CommandNode{
+		Command:          msg.Msg.Command,
+		Name:             msg.Msg.Name,
+		WorkingDirectory: msg.Msg.WorkingDirectory,
+		Parent:           msg.Node,
+	}
+
+	err := parser.SaveAddToFile(&n, m.configFilePath)
 	if err != nil {
 		println(err)
 		os.Exit(1)

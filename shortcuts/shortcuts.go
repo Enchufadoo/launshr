@@ -1,4 +1,5 @@
 package shortcuts
 
-const HELP_SHORTCUT = "f2"
-const EDIT_COMMAND_SHORTCUT = "ctrl+e"
+const HelpShortcut = "f1"
+const EditCommandShortcut = "ctrl+e"
+const AddCommandShortcut = "ctrl+a"
