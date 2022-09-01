@@ -39,7 +39,6 @@ func main() {
 
 	mainView := main_view.New(&nodes, configFilePath)
 
-	mainView.SetCurrentView(main_view.CommandListView)
 	p := tea.NewProgram(mainView, tea.WithAltScreen())
 
 	if err := p.Start(); err != nil {

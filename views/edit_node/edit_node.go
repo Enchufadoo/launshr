@@ -38,8 +38,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msgType := msg.(type) {
-	case navigation.NavigateEditNodeViewMsg:
-		m.initializeData(msg.(navigation.NavigateEditNodeViewMsg).Node)
 	case SaveNodeDataMsg:
 		return m.saveNodeData()
 	case JumpToNextItem:
@@ -88,8 +86,7 @@ func (m *Model) SaveData() {
 	m.node.WorkingDirectory = (*m.listOfElements)[WorkingDirectoryInput].GetText()
 }
 
-func New() tea.Model {
-
+func New(msg navigation.NavigateEditNodeViewMsg) tea.Model {
 	nameElement := input.NewTextInput("Name",
 		"Something to describe the command",
 		inputPressEnterHandler)
@@ -122,21 +119,21 @@ func New() tea.Model {
 	listOfElements[SaveButton] = saveElement
 	listOfElements[CancelButton] = cancelElement
 
-	return Model{
+	m := Model{
 		listOfElements: &listOfElements,
 		cursor:         0,
 	}
-}
 
-func (m *Model) initializeData(node *parser.CommandNode) {
 	m.header = header.New()
 	m.header.SubHeaderText = "Edit the command data"
-	m.node = node
-	(*m.listOfElements)[NameInput].SetText(node.Name)
-	(*m.listOfElements)[CommandInput].SetText(node.Command)
-	(*m.listOfElements)[WorkingDirectoryInput].SetText(node.WorkingDirectory)
-
+	m.node = msg.Node
+	(*m.listOfElements)[NameInput].SetText(msg.Node.Name)
+	(*m.listOfElements)[CommandInput].SetText(msg.Node.Command)
+	(*m.listOfElements)[WorkingDirectoryInput].SetText(msg.Node.WorkingDirectory)
 	(*m.listOfElements)[NameInput].SetSelected(true)
+
+	return m
+
 }
 
 func (m *Model) moveCursor(cursorDiff int) {

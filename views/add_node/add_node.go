@@ -13,6 +13,20 @@ import (
 type SaveNodeDataMsg struct{}
 type JumpToNextItem struct{}
 
+type AddCommandMsg struct {
+	Node *parser.CommandNode
+	Msg  node_data_form.AddNodeMsg
+}
+
+func EventAddCommand(node *parser.CommandNode, msg node_data_form.AddNodeMsg) func() tea.Msg {
+	return func() tea.Msg {
+		return AddCommandMsg{
+			Node: node,
+			Msg:  msg,
+		}
+	}
+}
+
 type Model struct {
 	cursor          int
 	selectedElement int
@@ -31,6 +45,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.editNodeForm, cmd = m.editNodeForm.Update(msg)
 
+	switch msg.(type) {
+	case node_data_form.AddNodeMsg:
+		return m, EventAddCommand(m.node, msg.(node_data_form.AddNodeMsg))
+	}
+
 	return m, cmd
 }
 
@@ -44,22 +63,16 @@ func (m Model) View() string {
 	return s
 }
 
-func (m *Model) SaveData() {
-
-}
-
-func New() tea.Model {
+func New(msg navigation.NavigateAddNodeViewMsg) tea.Model {
 	addHeader := header.New()
 	addHeader.SubHeaderText = "Add a new command"
-	return Model{
-		header:       addHeader,
-		editNodeForm: node_data_form.New(),
-	}
-}
+	dataForm := node_data_form.New()
 
-func (m *Model) saveNodeData() (Model, tea.Cmd) {
-	m.SaveData()
-	return *m, navigation.EventSaveCommand(m.node)
+	return Model{
+		node:         msg.Parent,
+		header:       addHeader,
+		editNodeForm: dataForm,
+	}
 }
 
 func inputPressEnterHandler() tea.Cmd {

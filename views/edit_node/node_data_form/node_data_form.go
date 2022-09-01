@@ -16,7 +16,11 @@ const (
 	CancelButton
 )
 
-type SaveNodeDataMsg struct{}
+type AddNodeMsg struct {
+	Name             string
+	Command          string
+	WorkingDirectory string
+}
 type JumpToNextItem struct{}
 
 type Model struct {
@@ -119,7 +123,11 @@ func New() tea.Model {
 		Text: "Save",
 		OnPressEnter: func() tea.Cmd {
 			return func() tea.Msg {
-				return SaveNodeDataMsg{}
+				return AddNodeMsg{
+					Name:             nameElement.GetText(),
+					Command:          commandElement.GetText(),
+					WorkingDirectory: wdElement.GetText(),
+				}
 			}
 		},
 	}

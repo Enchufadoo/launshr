@@ -15,15 +15,7 @@ import (
 
 type ViewIndex int
 
-const (
-	CommandListView ViewIndex = iota
-	EditNodeView
-	AddNodeView
-	HelpView
-)
-
 type Model struct {
-	state          ViewIndex
 	currentModel   tea.Model
 	nodes          *parser.CommandNode
 	configFilePath string
@@ -33,26 +25,6 @@ func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) setView(index ViewIndex) {
-	m.state = index
-}
-
-func (m *Model) SetCurrentView(index ViewIndex) {
-	m.setView(index)
-
-	switch index {
-	case HelpView:
-		m.currentModel = help.New()
-	case CommandListView:
-		m.currentModel = command_list.New(m.nodes)
-	case EditNodeView:
-		m.currentModel = edit_node.New()
-	case AddNodeView:
-		m.currentModel = add_node.New()
-	}
-
-}
-
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -60,22 +32,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msgType.String() {
 		case shortcuts.HelpShortcut:
-			if m.state == HelpView {
-				m.SetCurrentView(CommandListView)
+			_, ok := m.currentModel.(help.Model)
+			if ok {
+				m.NavigateToCommandList()
 			} else {
-				m.SetCurrentView(HelpView)
+				m.currentModel = help.New()
 			}
 
 		}
 	case navigation.SaveCommandMsg:
 		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
-		m.SetCurrentView(CommandListView)
+		m.NavigateToCommandList()
+	case add_node.AddCommandMsg:
+		m.addAndSaveToFile(msg.(add_node.AddCommandMsg))
+		m.NavigateToCommandList()
 	case navigation.NavigateEditNodeViewMsg:
-		m.SetCurrentView(EditNodeView)
+		m.currentModel = edit_node.New(msg.(navigation.NavigateEditNodeViewMsg))
 	case navigation.NavigateAddNodeViewMsg:
-		m.SetCurrentView(AddNodeView)
+		m.currentModel = add_node.New(msg.(navigation.NavigateAddNodeViewMsg))
 	case navigation.NavigateCommandListViewMsg:
-		m.SetCurrentView(CommandListView)
+		m.NavigateToCommandList()
 	}
 
 	m.currentModel, cmd = m.currentModel.Update(msg)
@@ -83,13 +59,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m *Model) NavigateToCommandList() {
+	m.currentModel = command_list.New(m.nodes)
+}
+
 func New(nodes *parser.CommandNode, configFilePath string) Model {
-	clModel := command_list.New(nodes)
-	return Model{
+
+	newModel := Model{
 		nodes:          nodes,
-		currentModel:   clModel,
 		configFilePath: configFilePath,
 	}
+
+	newModel.NavigateToCommandList()
+
+	return newModel
 }
 
 func (m Model) View() string {
@@ -100,7 +83,23 @@ func (m Model) View() string {
 
 // The view shouldn't handle this kind of things, TODO create global app instance
 func (m Model) saveToFile(node *parser.CommandNode) {
-	err := parser.SaveToFile(node, m.configFilePath)
+	err := parser.SaveEditToFile(node, m.configFilePath)
+	if err != nil {
+		println(err)
+		os.Exit(1)
+	}
+}
+
+func (m Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
+
+	n := parser.CommandNode{
+		Command:          msg.Msg.Command,
+		Name:             msg.Msg.Name,
+		WorkingDirectory: msg.Msg.WorkingDirectory,
+		Parent:           msg.Node,
+	}
+
+	err := parser.SaveAddToFile(&n, m.configFilePath)
 	if err != nil {
 		println(err)
 		os.Exit(1)

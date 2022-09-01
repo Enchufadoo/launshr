@@ -118,7 +118,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case shortcuts.EditCommandShortcut:
 			return m, navigation.EventNavigateEditNode((*m.children)[m.cursor])
 		case shortcuts.AddCommandShortcut:
-			return m, navigation.EventNavigateAddNode((*m.children)[m.cursor])
+			return m, navigation.EventNavigateAddNode(m.currentNode)
 		case "backspace":
 			return m.GenerateNodeModel(m.currentNode), cmd
 		case "enter":
