@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/google/uuid"
+	"github.com/tidwall/pretty"
 	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"reflect"
@@ -42,7 +43,9 @@ func SaveAddToFile(node *CommandNode, configFilePath string) error {
 		}
 	}
 
-	err = ioutil.WriteFile(configFilePath, []byte(stringContent), 0644)
+	prettyJson := pretty.Pretty([]byte(stringContent))
+
+	err = ioutil.WriteFile(configFilePath, prettyJson, 0644)
 
 	if err != nil {
 		return err
