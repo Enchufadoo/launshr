@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbles v0.11.1-0.20220621132357-42f85b4a1b9b
 	github.com/charmbracelet/bubbletea v0.21.1-0.20220623121936-ca32c4c62873
 	github.com/charmbracelet/lipgloss v0.5.0
+	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.7.1
 	github.com/tidwall/sjson v1.2.4
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
@@ -16,7 +17,6 @@ require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
