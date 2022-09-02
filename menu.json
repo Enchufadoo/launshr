@@ -1,3 +1,0 @@
-{
-  "Arrancar": {
-    "command": "docker compose up",
