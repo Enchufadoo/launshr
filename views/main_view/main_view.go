@@ -3,6 +3,7 @@ package main_view
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"launshr/config"
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
@@ -90,7 +91,7 @@ func (m Model) saveToFile(node *parser.CommandNode) {
 	}
 }
 
-func (m Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
+func (m *Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
 
 	n := parser.CommandNode{
 		Command:          msg.Msg.Command,
@@ -104,4 +105,8 @@ func (m Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
 		println(err)
 		os.Exit(1)
 	}
+
+	nodes := config.GetConfig(m.configFilePath)
+	m.nodes = &nodes
+
 }
