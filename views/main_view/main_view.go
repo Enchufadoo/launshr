@@ -41,8 +41,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
-	case navigation.SaveCommandMsg:
-		m.saveToFile(msg.(navigation.SaveCommandMsg).Node)
+	case edit_node.EditCommandMsg:
+		m.editAndSaveToFile(msg.(edit_node.EditCommandMsg))
 		m.NavigateToCommandList()
 	case add_node.AddCommandMsg:
 		m.addAndSaveToFile(msg.(add_node.AddCommandMsg))
@@ -83,8 +83,13 @@ func (m Model) View() string {
 }
 
 // The view shouldn't handle this kind of things, TODO create global app instance
-func (m Model) saveToFile(node *parser.CommandNode) {
-	err := parser.SaveEditToFile(node, m.configFilePath)
+func (m Model) editAndSaveToFile(msg edit_node.EditCommandMsg) {
+
+	msg.Node.Name = msg.Msg.Name
+	msg.Node.Command = msg.Msg.Command
+	msg.Node.WorkingDirectory = msg.Msg.WorkingDirectory
+
+	err := parser.SaveEditToFile(msg.Node, m.configFilePath)
 	if err != nil {
 		println(err)
 		os.Exit(1)

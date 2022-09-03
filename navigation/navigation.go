@@ -15,18 +15,6 @@ type NavigateEditNodeViewMsg struct {
 
 type NavigateCommandListViewMsg struct{}
 
-type SaveCommandMsg struct {
-	Node *parser.CommandNode
-}
-
-func EventSaveCommand(node *parser.CommandNode) func() tea.Msg {
-	return func() tea.Msg {
-		return SaveCommandMsg{
-			Node: node,
-		}
-	}
-}
-
 func EventNavigateCommandList() func() tea.Msg {
 	return func() tea.Msg {
 		return NavigateCommandListViewMsg{}
