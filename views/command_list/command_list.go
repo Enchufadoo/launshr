@@ -222,7 +222,13 @@ func (m *Model) renderItemsList() string {
 			cursor = ">"
 		}
 
-		listItems += fmt.Sprintf("%s %s\n", cursor, choice.Name)
+		name := choice.Name
+
+		if choice.IsParent() {
+			name = "\u2630 " + name
+		}
+
+		listItems += fmt.Sprintf("%s %s\n", cursor, name)
 	}
 
 	if len(*m.children) > 0 {

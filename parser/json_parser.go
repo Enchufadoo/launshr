@@ -88,7 +88,7 @@ func (c *JsonParser) createNode(value []byte, key []byte, dataType jsonparser.Va
 			name = string(key)
 		}
 
-		newNode.Name = "\u2630 " + name
+		newNode.Name = name
 		newNode.Parent = node
 		err := c.parseStructure(value, dataType, &newNode, fullKey)
 

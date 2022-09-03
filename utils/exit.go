@@ -9,6 +9,8 @@ const (
 	NoConfigFileProvided = iota
 	CouldNotOpenConfigFile
 	CouldNotParseJSONFile
+	CouldNotSaveJSONFile
+	CouldNotSaveEditJSONFile
 )
 
 func ExitError(errorCode int, message ...any) {

@@ -3,7 +3,7 @@ package main_view
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"launshr/config"
+	"launshr/encoder"
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
@@ -11,10 +11,7 @@ import (
 	"launshr/views/command_list"
 	"launshr/views/edit_node"
 	"launshr/views/help"
-	"os"
 )
-
-type ViewIndex int
 
 type Model struct {
 	currentModel   tea.Model
@@ -42,10 +39,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	case edit_node.EditCommandMsg:
-		m.editAndSaveToFile(msg.(edit_node.EditCommandMsg))
+		encoder.EditAndSaveToFile(msg.(edit_node.EditCommandMsg), m.configFilePath)
 		m.NavigateToCommandList()
 	case add_node.AddCommandMsg:
-		m.addAndSaveToFile(msg.(add_node.AddCommandMsg))
+		m.nodes = encoder.AddAndSaveToFile(msg.(add_node.AddCommandMsg), m.configFilePath)
 		m.NavigateToCommandList()
 	case navigation.NavigateEditNodeViewMsg:
 		m.currentModel = edit_node.New(msg.(navigation.NavigateEditNodeViewMsg))
@@ -80,38 +77,4 @@ func (m Model) View() string {
 	return lipgloss.JoinVertical(lipgloss.Top,
 		m.currentModel.View(),
 	)
-}
-
-// The view shouldn't handle this kind of things, TODO create global app instance
-func (m Model) editAndSaveToFile(msg edit_node.EditCommandMsg) {
-
-	msg.Node.Name = msg.Msg.Name
-	msg.Node.Command = msg.Msg.Command
-	msg.Node.WorkingDirectory = msg.Msg.WorkingDirectory
-
-	err := parser.SaveEditToFile(msg.Node, m.configFilePath)
-	if err != nil {
-		println(err)
-		os.Exit(1)
-	}
-}
-
-func (m *Model) addAndSaveToFile(msg add_node.AddCommandMsg) {
-
-	n := parser.CommandNode{
-		Command:          msg.Msg.Command,
-		Name:             msg.Msg.Name,
-		WorkingDirectory: msg.Msg.WorkingDirectory,
-		Parent:           msg.Node,
-	}
-
-	err := parser.SaveAddToFile(&n, m.configFilePath)
-	if err != nil {
-		println(err)
-		os.Exit(1)
-	}
-
-	nodes := config.GetConfig(m.configFilePath)
-	m.nodes = &nodes
-
 }
