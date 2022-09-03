@@ -43,21 +43,31 @@ func (m Model) GenerateNodeModel(node *parser.CommandNode) Model {
 	}
 }
 
-func (m Model) filterNodes(textToFilter string, node *parser.CommandNode) *[]*parser.CommandNode {
+func (m Model) recursiveSearch(needle string, resultArray *[]*parser.CommandNode, node *parser.CommandNode) {
+	for key, v := range node.Nodes {
+		if strings.Contains(strings.ToLower(v.Name), needle) {
+			*resultArray = append(*resultArray, &node.Nodes[key])
+		}
+
+		if v.IsParent() {
+			m.recursiveSearch(needle, resultArray, &v)
+		}
+
+	}
+}
+
+func (m *Model) filterNodes(textToFilter string, node *parser.CommandNode) *[]*parser.CommandNode {
 	var filteredChildren []*parser.CommandNode
 
 	textFilter := strings.Trim(strings.ToLower(textToFilter), " ")
 	textFilterEmpty := textFilter == ""
 
-	for key, v := range node.Nodes {
-
-		if !textFilterEmpty {
-			if !strings.Contains(strings.ToLower(v.Name), textFilter) {
-				continue
-			}
+	if textFilterEmpty {
+		for key, _ := range node.Nodes {
+			filteredChildren = append(filteredChildren, &node.Nodes[key])
 		}
-
-		filteredChildren = append(filteredChildren, &node.Nodes[key])
+	} else {
+		m.recursiveSearch(textFilter, &filteredChildren, node)
 	}
 
 	return &filteredChildren
@@ -81,6 +91,7 @@ func New(node *parser.CommandNode) tea.Model {
 	filledModel := newModel.GenerateNodeModel(node)
 	filledModel.textInput = generateTextInput()
 	filledModel.header = header.New()
+
 	return filledModel
 }
 
