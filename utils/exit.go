@@ -11,6 +11,7 @@ const (
 	CouldNotParseJSONFile
 	CouldNotSaveJSONFile
 	CouldNotSaveEditJSONFile
+	ErrorRunningTheCommand
 )
 
 func ExitError(errorCode int, message ...any) {
