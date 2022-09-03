@@ -16,7 +16,7 @@ const (
 	CancelButton
 )
 
-type AddNodeMsg struct {
+type SaveNodeMsg struct {
 	Name             string
 	Command          string
 	WorkingDirectory string
@@ -26,14 +26,14 @@ type JumpToNextItem struct{}
 type Model struct {
 	cursor          int
 	selectedElement int
-	listOfElements  *map[int]form_element.FormElement
+	ListOfElements  *map[int]form_element.FormElement
 }
 
 func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msgType := msg.(type) {
@@ -55,7 +55,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	for k, v := range *m.listOfElements {
+	for k, v := range *m.ListOfElements {
 		if k == m.cursor {
 			cmd = v.Update(msg)
 		}
@@ -67,7 +67,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) moveCursor(cursorDiff int) {
 	m.cursor += cursorDiff
 
-	for k, v := range *m.listOfElements {
+	for k, v := range *m.ListOfElements {
 		if k == m.cursor {
 			v.SetSelected(true)
 		} else {
@@ -77,7 +77,7 @@ func (m *Model) moveCursor(cursorDiff int) {
 }
 
 func (m *Model) moveCursorDown() {
-	if m.cursor < len(*m.listOfElements)-1 {
+	if m.cursor < len(*m.ListOfElements)-1 {
 		m.moveCursor(1)
 	}
 }
@@ -94,21 +94,7 @@ func inputPressEnterHandler() tea.Cmd {
 	}
 }
 
-func (m *Model) SaveData() {
-
-}
-
-func (m Model) View() string {
-	viewString := ""
-	viewString += (*m.listOfElements)[NameInput].Render() + "\n"
-	viewString += (*m.listOfElements)[CommandInput].Render() + "\n"
-	viewString += (*m.listOfElements)[WorkingDirectoryInput].Render() + "\n\n"
-
-	viewString += (*m.listOfElements)[SaveButton].Render() + "\t" + (*m.listOfElements)[CancelButton].Render()
-	return viewString
-}
-
-func New() tea.Model {
+func (m *Model) InitializeForm() {
 	nameElement := input.NewTextInput("Name",
 		"Something to describe the command",
 		inputPressEnterHandler)
@@ -123,7 +109,7 @@ func New() tea.Model {
 		Text: "Save",
 		OnPressEnter: func() tea.Cmd {
 			return func() tea.Msg {
-				return AddNodeMsg{
+				return SaveNodeMsg{
 					Name:             nameElement.GetText(),
 					Command:          commandElement.GetText(),
 					WorkingDirectory: wdElement.GetText(),
@@ -147,8 +133,23 @@ func New() tea.Model {
 
 	nameElement.SetSelected(true)
 
+	m.ListOfElements = &listOfElements
+
+}
+
+func (m Model) View() string {
+	viewString := ""
+	viewString += (*m.ListOfElements)[NameInput].Render() + "\n"
+	viewString += (*m.ListOfElements)[CommandInput].Render() + "\n"
+	viewString += (*m.ListOfElements)[WorkingDirectoryInput].Render() + "\n\n"
+
+	viewString += (*m.ListOfElements)[SaveButton].Render() + "\t" + (*m.ListOfElements)[CancelButton].Render()
+	return viewString
+}
+
+func New() Model {
+
 	return Model{
-		listOfElements: &listOfElements,
-		cursor:         0,
+		cursor: 0,
 	}
 }

@@ -15,10 +15,10 @@ type JumpToNextItem struct{}
 
 type AddCommandMsg struct {
 	Node *parser.CommandNode
-	Msg  node_data_form.AddNodeMsg
+	Msg  node_data_form.SaveNodeMsg
 }
 
-func EventAddCommand(node *parser.CommandNode, msg node_data_form.AddNodeMsg) func() tea.Msg {
+func EventAddCommand(node *parser.CommandNode, msg node_data_form.SaveNodeMsg) func() tea.Msg {
 	return func() tea.Msg {
 		return AddCommandMsg{
 			Node: node,
@@ -31,7 +31,7 @@ type Model struct {
 	cursor          int
 	selectedElement int
 	listOfElements  *map[int]form_element.FormElement
-	editNodeForm    tea.Model
+	editNodeForm    node_data_form.Model
 	header          header.Model
 	node            *parser.CommandNode
 }
@@ -46,8 +46,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.editNodeForm, cmd = m.editNodeForm.Update(msg)
 
 	switch msg.(type) {
-	case node_data_form.AddNodeMsg:
-		return m, EventAddCommand(m.node, msg.(node_data_form.AddNodeMsg))
+	case node_data_form.SaveNodeMsg:
+		return m, EventAddCommand(m.node, msg.(node_data_form.SaveNodeMsg))
 	}
 
 	return m, cmd
@@ -66,7 +66,9 @@ func (m Model) View() string {
 func New(msg navigation.NavigateAddNodeViewMsg) tea.Model {
 	addHeader := header.New()
 	addHeader.SubHeaderText = "Add a new command"
+
 	dataForm := node_data_form.New()
+	dataForm.InitializeForm()
 
 	return Model{
 		node:         msg.Parent,
