@@ -20,7 +20,7 @@ func EditAndSaveToFile(msg edit_node.EditCommandMsg, filePath string) {
 	msg.Node.Command = msg.Msg.Command
 	msg.Node.WorkingDirectory = msg.Msg.WorkingDirectory
 
-	err := SaveEditToFile(msg.Node, filePath)
+	err := saveEdit(msg.Node, filePath)
 	if err != nil {
 		utils.ExitError(utils.CouldNotSaveEditJSONFile, err)
 	}
@@ -35,7 +35,7 @@ func AddAndSaveToFile(msg add_node.AddCommandMsg, filePath string) *parser.Comma
 		Parent:           msg.Node,
 	}
 
-	err := SaveAddToFile(&n, filePath)
+	err := saveAdd(&n, filePath)
 	if err != nil {
 		utils.ExitError(utils.CouldNotSaveJSONFile, err)
 	}
@@ -44,7 +44,7 @@ func AddAndSaveToFile(msg add_node.AddCommandMsg, filePath string) *parser.Comma
 	return &nodes
 }
 
-func SaveAddToFile(node *parser.CommandNode, configFilePath string) error {
+func saveAdd(node *parser.CommandNode, configFilePath string) error {
 	joinedKey := ""
 	if node.Parent.JsonFullKey != nil {
 		joinedKey = strings.Join(node.Parent.JsonFullKey[:], ".") + "."
@@ -89,7 +89,7 @@ func SaveAddToFile(node *parser.CommandNode, configFilePath string) error {
 	return nil
 }
 
-func SaveEditToFile(node *parser.CommandNode, configFilePath string) error {
+func saveEdit(node *parser.CommandNode, configFilePath string) error {
 	joinedKey := strings.Join(node.JsonFullKey[:], ".")
 
 	newKeysMap := map[string]string{
