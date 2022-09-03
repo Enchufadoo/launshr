@@ -8,6 +8,7 @@ import (
 	"launshr/navigation"
 	"launshr/parser"
 	"launshr/shortcuts"
+	"launshr/utils"
 	"launshr/views/header"
 	"os"
 	"os/exec"
@@ -95,7 +96,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case programFinishedMsg:
-		os.Exit(0)
 		return m, tea.Quit
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -142,16 +142,18 @@ func runCommand(command string, workingDirectory string) tea.Cmd {
 	if workingDirectory != "" {
 		err := os.Chdir(workingDirectory)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			utils.ExitError(utils.ErrorChangingDirectory, err)
 		}
 	}
 
 	c := exec.Command("bash", "-c", command)
 
 	return tea.ExecProcess(c, func(err error) tea.Msg {
-		os.Exit(1)
-		return programFinishedMsg{err} // TODO improve the exiting process
+		if err != nil {
+			utils.ExitError(utils.ErrorRunningTheCommand, err)
+		}
+
+		return programFinishedMsg{err}
 	})
 }
 
