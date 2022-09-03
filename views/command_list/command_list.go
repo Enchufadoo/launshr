@@ -142,8 +142,7 @@ func runCommand(command string, workingDirectory string) tea.Cmd {
 	if workingDirectory != "" {
 		err := os.Chdir(workingDirectory)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			utils.ExitError(utils.ErrorChangingDirectory, err)
 		}
 	}
 
